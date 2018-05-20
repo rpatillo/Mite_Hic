@@ -10,27 +10,6 @@ app = Flask(__name__)
 
 DATABASE = 'database.db'
 
-tasks = [
-    {
-        'id': 1,
-        'title': u'Buy groceries',
-        'description': u'Milk, Cheese, Pizza, Fruit, Tylenol', 
-        'done': False
-    },
-    {
-        'id': 2,
-        'title': u'Learn Python',
-        'description': u'Need to find a good Python tutorial on the web', 
-        'done': False
-    }
-]
-
-users = {
-    1: 'paul',
-    2: 'mike',
-    3: 'robert'
-}
-
 ## DB & STUFF
 def get_db():
     db = getattr(g, '_database', None)
@@ -57,6 +36,13 @@ def query_db(query, args=(), one=False):
     cur.close()
     return (rv[0] if rv else None) if one else rv
 
+def insertUser(username,password):
+    con = sqlite3.connect("database.db")
+    cur = con.cursor()
+    cur.execute("INSERT INTO users (user,pass) VALUES (?,?)", (username,password))
+    con.commit()
+    con.close()
+
 # TRAINING
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
@@ -73,33 +59,48 @@ def index():
         return 'You are logged in as ' + session['username']
     return jsonify({'Hello': 'World'})
 
+# LOGIN ROUTE
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     if request.method == 'GET':
         return jsonify({'Login': 'LoL!!'})
     if request.method == 'POST':
-        print(request.args['user'])
-        # ret = query_db('SELECT * FROM users') 
-        # user = query_db('SELECT * FROM users WHERE user = ?',
-                # [request.args['user']], one=True)
-        var = "%{}%".format(request.args['user'])
-        user = query_db('SELECT * FROM users WHERE user LIKE ?',
+        var = "%{}%".format(request.args['username'])
+        user = query_db('SELECT * FROM users WHERE user = ?',
                 [var], one=False)
         print(user)
-        # , request.args['user'])
-        # print(ret)
         # return Response(json.dumps(ret), mimetype='application/json')
         return 'Hello World'
 
-@app.route('/register', methods=['POST'])
+# REGISTER ROUTE
+@app.route('/register', methods=['POST', 'GET'])
 def register():
-    if request.method == 'POST':
-        user = request.args['username']
-        pwd = request.args['password']
-        var = "%{}%".format(request.args['user'])
-        ret = query_db('SELECT * FROM users WHERE user LIKE ?',
-                [var], one=False)
+    if request.method == 'GET':
+        return jsonify({'Login': 'LoL!!'})
 
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        # var = "%{}%".format(request.form.get('username'))
+        var = (username, password,)
+        user = query_db('SELECT * FROM users WHERE user = ?',
+                [username], one=True)
+        if user is None:
+            insertUser(username,password)
+            print('INSERT')
+        else:
+            return 'NON !'
+            print('TEST = FALSE')
+
+        # print(test)
+
+        return jsonify({username: password})
+        # pwd = request.args['password']
+        # usr = "%{}%".format(request.args['user'])
+        # pwd = "%{}%".format(request.args['password'])
+        # ret = query_db('SELECT * FROM users WHERE user LIKE ?',
+                # [var], one=False)
+        return 'Hello Zorg!'
 
 
 
